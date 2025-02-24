@@ -1,13 +1,12 @@
 {
   "expo": {
-    "name": "supabook",
-    "slug": "supabook",
+    "name": "tu-espacio-app",
+    "slug": "tu-espacio-app",
+    "newArchEnabled": true,
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -32,6 +31,13 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "assetBundlePatterns": [
+      "src/assets/*"
+    ],
+    "extra": {
+      "SUPABASE_URL": "https://vysrppzcjjyxazjlqpxj.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5c3JwcHpjamp5eGF6amxxcHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYzNjc2MTEsImV4cCI6MjA1MTk0MzYxMX0.i_LEyqpHCuV2Fazl1hRLHWcs_x8xgdsHZD1k7H3xqSc"
     }
   }
 }
