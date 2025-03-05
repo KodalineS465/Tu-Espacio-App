@@ -1,10 +1,15 @@
-import React, { useContext } from "react";
-import { Image } from "react-native";
+{/* CODIGO COMPLETO DE LA PANTALLA DE NAVEGACION
+    Codigo que te manda directamente a la pantalla de login en lugar de
+    la pantalla de explorar */}
+import React, { useState, useContext, useEffect } from "react";
+import { ActivityIndicator, View, Image } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons, FontAwesome5, Entypo } from '@expo/vector-icons';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+
+import { supabase } from "../../supabase";
 
 // Importación de pantallas
 import AuctionActive from "../../src/screens/auction/AuctionActive";
@@ -33,7 +38,7 @@ import AuctionFinished from "../../src/screens/auction/AuctionFinished";
 import MainHeader from "../../src/components/MainHeader";
 
 // Creación del stack de navegación para la sección de exploración
-const ExploreStack = createNativeStackNavigator();
+const ExploreStack = createNativeStackNavigator()
 function ExploreStackScreen() {
     return (
         <ExploreStack.Navigator>
@@ -59,19 +64,19 @@ function ExploreStackScreen() {
                 }}
             />
         </ExploreStack.Navigator>
-    );
+    )
 }
 
 // Creación del stack de navegación para la sección de propiedades
-const PropertyStack = createNativeStackNavigator();
-function PropertyStackScreen({ navigation }) {
+const PropertyStack = createNativeStackNavigator()
+function PropertyStackScreen({navigation}) {
     return (
         <PropertyStack.Navigator>
             <PropertyStack.Screen
                 name='Property'
                 component={Property}
                 options={{
-                    header: () => <CreateButton onPress={() => { navigation.push("CreateProperty") }} />
+                    header: () => <CreateButton onPress={() => {navigation.push("CreateProperty")}}/>
                 }}
             />
             <PropertyStack.Screen
@@ -83,11 +88,11 @@ function PropertyStackScreen({ navigation }) {
                 component={EditProperty}
             />
         </PropertyStack.Navigator>
-    );
+    )
 }
 
 // Creación del stack de navegación para la sección de búsqueda
-const SearchStack = createNativeStackNavigator();
+const SearchStack = createNativeStackNavigator()
 function SearchStackScreen() {
     return (
         <SearchStack.Navigator>
@@ -113,11 +118,11 @@ function SearchStackScreen() {
                 }}
             />
         </SearchStack.Navigator>
-    );
+    )
 }
 
 // Creación de la navegación principal con pestañas inferiores
-const MessageStack = createNativeStackNavigator();
+const MessageStack = createNativeStackNavigator()
 function MessageStackScreen() {
     return (
         <>
@@ -159,11 +164,11 @@ function MessageStackScreen() {
                 />
             </MessageStack.Navigator>
         </>
-    );
+    )
 }
 
 // Definición de la pila de navegación para la pantalla de perfil
-const ProfileStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator()
 function ProfileStackScreen() {
     return (
         <ProfileStack.Navigator>
@@ -175,11 +180,11 @@ function ProfileStackScreen() {
                 }}
             />
         </ProfileStack.Navigator>
-    );
+    )
 }
 
 // Definición de la pila de navegación para las pantallas de autenticación
-const LoginStack = createNativeStackNavigator();
+const LoginStack = createNativeStackNavigator()
 function LoginStackScreen() {
     return (
         <LoginStack.Navigator>
@@ -209,11 +214,12 @@ function LoginStackScreen() {
                 }}
             />
         </LoginStack.Navigator>
-    );
+    )
 }
 
+
 // Definición de la pila de navegación para subastas terminadas del arrendador
-const AuctionLessorFinishedStack = createNativeStackNavigator();
+const AuctionLessorFinishedStack = createNativeStackNavigator()
 function AuctionLessorFinishedStackScreen() {
     return (
         <AuctionLessorFinishedStack.Navigator>
@@ -234,7 +240,7 @@ function AuctionLessorFinishedStackScreen() {
                 }}
             />
         </AuctionLessorFinishedStack.Navigator>
-    );
+    )
 }
 
 // Navegación por pestañas para las subastas
@@ -261,7 +267,7 @@ function AuctionTopTabs() {
                     tabBarLabel: "Activas"
                 }}
             />
-            <AuctionTopTab.Screen
+            <AuctionLessorTopTab.Screen
                 name="AuctionTopTabFinished"
                 component={AuctionFinished}
                 options={{
@@ -309,9 +315,9 @@ function AuctionLessorTopTabs() {
 
 /* Configura la barra de navegación inferior con pestañas dinámicas dependiendo del tipo de usuario.
  * Si el usuario es un arrendador (isLessor), se muestran las pestañas específicas para arrendadores. */
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator()
 function HomeTabs() {
-    const { isLessor } = useContext(UserContext);
+    const {isLessor} = useContext(UserContext);
     return (
         <Tab.Navigator
             initialRouteName="ExploreTab"
@@ -320,13 +326,13 @@ function HomeTabs() {
                 tabBarActiveTintColor: "#0f1035"
             }}
         >
-            {isLessor ? (
+            {isLessor? (
                 <>
                     <Tab.Screen
                         name='PropertyTab'
                         component={PropertyStackScreen}
                         options={{
-                            tabBarLabel: '',
+                            tabBarLabel:'',
                             headerShown: false,
                             tabBarIcon: ({ color, size }) => (
                                 <Ionicons name="business" color={color} size={size} />
@@ -338,7 +344,7 @@ function HomeTabs() {
                         component={AuctionLessorTopTabs}
                         options={{
                             header: () => <MainHeader />,
-                            tabBarLabel: '',
+                            tabBarLabel:'',
                             headerShown: true,
                             tabBarIcon: ({ color, size }) => (
                                 <FontAwesome5 name="gavel" size={size} color={color} />
@@ -353,7 +359,7 @@ function HomeTabs() {
                         name='ExploreTab'
                         component={ExploreStackScreen}
                         options={{
-                            tabBarLabel: '',
+                            tabBarLabel:'',
                             headerShown: false,
                             tabBarIcon: ({ color, size }) => (
                                 <Ionicons name="business" color={color} size={size} />
@@ -364,7 +370,7 @@ function HomeTabs() {
                         name='SearchTab'
                         component={SearchStackScreen}
                         options={{
-                            tabBarLabel: '',
+                            tabBarLabel:'',
                             headerShown: false,
                             tabBarIcon: ({ color, size }) => (
                                 <Ionicons name="map" color={color} size={size} />
@@ -376,7 +382,7 @@ function HomeTabs() {
                         component={AuctionTopTabs}
                         options={{
                             header: () => <MainHeader />,
-                            tabBarLabel: '',
+                            tabBarLabel:'',
                             headerShown: true,
                             tabBarIcon: ({ color, size }) => (
                                 <FontAwesome5 name="gavel" size={size} color={color} />
@@ -390,7 +396,7 @@ function HomeTabs() {
                 name='MessageTab'
                 component={MessageStackScreen}
                 options={{
-                    tabBarLabel: '',
+                    tabBarLabel:'',
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (
                         <Entypo name="message" size={size} color={color} />
@@ -402,7 +408,7 @@ function HomeTabs() {
                 name='ProfileTab'
                 component={ProfileStackScreen}
                 options={{
-                    tabBarLabel: '',
+                    tabBarLabel:'',
                     headerShown: false,
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="person" color={color} size={size} />
@@ -410,7 +416,7 @@ function HomeTabs() {
                 }}
             />
         </Tab.Navigator>
-    );
+    )
 }
 
 /* Administra la navegación principal de la aplicación.
@@ -418,41 +424,87 @@ function HomeTabs() {
 const RootStack = createNativeStackNavigator();
 
 function RootNavigator() {
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+
+    useEffect(() => {
+        const checkUser = async () => {
+            try {
+                // Verifica si supabase está inicializado
+                if (!supabase) {
+                    throw new Error('Supabase no está inicializado correctamente');
+                }
+
+                const { data, error } = await supabase.auth.getUser();
+                if (error) throw error;
+                setUser (data.user);
+            } catch (error) {
+                console.error('Error obteniendo usuario1: ', error.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        checkUser(); // Llamar la verificación del usuario antes de suscribirse a cambios de autenticación
+
+        const authListener = supabase.auth.onAuthStateChange((event, session) => {
+            setUser(session?.user || null);
+        });
+
+        return () => {
+            authListener?.subscription?.unsubscribe(); // Asegura la limpieza del listener
+        };
+    }, []);
+
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size='large' />
+            </View>
+        );
+    }
+
     return (
         <NavigationContainer>
             <RootStack.Navigator>
-                <RootStack.Screen
-                    name='Home'
-                    component={HomeTabs}
-                    options={{
-                        headerShown: false
-                    }}
-                />
-                <RootStack.Screen
-                    name='LoginStack'
-                    component={LoginStackScreen}
-                    options={{
-                        headerShown: false
-                    }}
-                />
+                {user ? (
+                    <>
+                        <RootStack.Screen
+                            name='Home'
+                            component={HomeTabs}
+                            options={{
+                                headerShown: false
+                            }}
+                        />
+                        <RootStack.Screen
+                            name='Filter'
+                            component={Filter}
+                        />
+                    </>
+                ) : (
+                    <RootStack.Screen
+                        name='LoginStack'
+                        component={LoginStackScreen}
+                        options={{
+                            headerShown: false
+                        }}
+                    />
+                )}
                 <RootStack.Screen
                     name='PrivacyPolicy'
                     component={PrivacyPolicy}
                 />
-                <RootStack.Screen
-                    name='Filter'
-                    component={Filter}
-                />
             </RootStack.Navigator>
         </NavigationContainer>
-    );
+    )
 }
 
 // Proveedor de usuario y entrada principal a la navegación de la app.
 export default function Navigation() {
     return (
         <UserProvider>
-            <RootNavigator />
+            <RootNavigator/>
         </UserProvider>
-    );
+    )
 }

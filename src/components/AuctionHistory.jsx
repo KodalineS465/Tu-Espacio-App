@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Image, Text, TouchableOpacity } from 'react-native';
 import DivisionLine from "./DivisionLine";
@@ -22,7 +21,7 @@ const AuctionHistory = ({ propertyId, navigation }) => {
             }
 
             setProperty(data);
-            setOffers(date.latestAuction?.offers || []);
+            setOffers(data.latestAuction?.offers || []);
         };
 
         fetchProperty();
@@ -30,15 +29,12 @@ const AuctionHistory = ({ propertyId, navigation }) => {
 
     if (!property) return <Text>Cargando...</Text>;
 
-    const expiresAtDat = new Date(property.expiresAt);
+    const expiresAtDate = new Date(property.expiresAt);
 
     return (
         <View style={styles.mainContainer}>
             <View style={styles.imageContainerProperty}>
-                <Image
-                    source={{uri: property.propertyImage}}
-                    style={[styles.mainImage, styles.rectangularImage]}
-                />
+                <Image source={{uri: property.propertyImage}} style={[styles.mainImage, styles.rectangularImage]} />
             </View>
             <View style={styles.rowContainer}>
                 <Text style={styles.textAddress} numberOfLines={1}>{property.address}</Text>
@@ -46,21 +42,26 @@ const AuctionHistory = ({ propertyId, navigation }) => {
             </View>
             <DivisionLine />
             {offers.length > 0 && offers.map((offer, index) => {
-                const offerDate = new Date(offer.date); // Convertir timestamp de Supabase
+                const offerDate = offer.date ? new Date(offer.date) : null; // Convertir timestamp de Supabase
 
                 return (
                     <TouchableOpacity
                         style={styles.container}
                         key={index}
                         onPress={() => {
-                            console.log(offer.id)
-                            navigation.navigate("Home", {
+                            if (offer?.user?.id && property?.id) {
+                                console.log(offer.id)
+                                navigation.navigate("Home", {
                                 screen: "MessageTab",
                                 params: {
                                     screen: "Message" ,
                                     params: { userId: offer.user.id, propertyId: property.id }
                                 }
                             });
+                            } else {
+                                console.error("Error: Datos de navegación faltantes.");
+                            }
+                            
                     }}>
                         <View style={styles.leftContainer}>
                             <View style={styles.containerImage}>

@@ -13,12 +13,12 @@ const AuctionLessorActive = ({ navigation }) => {
     useFocusEffect(
         React.useCallback(() => {
             console.log('Pantalla enfocada');
+            setLoading(true);
             getAllAuctions();
             return () => {
                 console.log('Pantalla desenfocada');
                 setProperties([]);
                 setRefreshing(false);
-                setLoading(true);
             };
         }, [])
     );
@@ -31,7 +31,10 @@ const AuctionLessorActive = ({ navigation }) => {
 
     const getAllAuctions = async () => {
         try {
-            const user = supabase.auth.user();
+            const { data: userData, error: userError } = await supabase.auth.getUser();
+            if (userError || !userData?.user) return;
+
+            const user = userData.user;
             if (!user) return;
 
             let { data: propertiesList, error } = await supabase
@@ -44,41 +47,51 @@ const AuctionLessorActive = ({ navigation }) => {
 
             if (error) throw error;
 
-            for (const property of propertiesList) {
-                let { data: auctions, error: auctionError } = await supabase
+            if (propertiesList.length > 0) {
+                // Obtener auctions en una sola consulta
+                const propertyIds = propertiesList.map(p => p.id);
+                const { data: auctions, error: auctionError } = await supabase
                     .from('Auctions')
                     .select('*')
-                    .eq('property_id', property.id)
-                    .order('createdAt', { ascending: false })
-                    .limit(1);
+                    .in('property_id', propertyIds)
+                    .order('createdAt', { ascending: false });
                 
                 if (auctionError) throw auctionError;
-                property.latestAuction = auctions.length ? auctions[0] : null;
-            }
-            
+
+            // Asignar la última subasta a cada propiedad
+            propertiesList.forEach(property => {
+                property.latestAuction = auctions.find(a => a.property_id === property.id) || null;
+            });
+
             await getImagesUrls(propertiesList);
             console.log('Propiedades cargadas correctamente');
-        } catch (error) {
-            console.error('Error al cargar las propiedades:', error);
+        } else {
+            setProperties([]);
+            setLoading(false);
         }
-    };
+    } catch (error) {
+        console.error('Error al cargar las propiedades:', error);
+    }
+};
 
     const getImagesUrls = async (propertiesList) => {
-        for (const item of propertiesList) {
-            try {
-                const { data, error } = await supabase.storage
+        try {
+            for (const item of propertiesList) {
+                const { data } = supabase.storage
                     .from('images')
                     .getPublicUrl(`${item.id}.jpg`);
                 
                 if (error) throw error;
                 item.propertyImage = data.publicUrl || '';
                 console.log('URL de la imagen cargada correctamente.');
-            } catch (error) {
-                console.error('Error al cargar la URL de la imagen:', error);
             }
+            
+            setProperties(propertiesList);
+        } catch (error) {
+            console.error('Error al cargar la URL de la imagen:', error);
+        } finally {
+            setLoading(false);
         }
-        setProperties(propertiesList);
-        setLoading(false);
     };
 
     return (
@@ -90,13 +103,17 @@ const AuctionLessorActive = ({ navigation }) => {
                     style={{ flex: 1, backgroundColor: 'white' }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 >
-                    {properties.map(property => (
-                        <ShowAuction
-                            key={property.id}
-                            onPress={() => {}}
-                            property={property}
-                        />
-                    ))}
+                    {properties.length > 0 ? (
+                        properties.map(property => (
+                            <ShowAuction
+                                key={property.id}
+                                onPress={() => {}}
+                                property={property}
+                            />
+                        ))
+                    ) : (
+                        <Text style={{ textAlign: 'center', marginTop: 20 }}>No hay propiedades disponibles</Text>
+                    )}
                 </ScrollView>
             )}
         </>

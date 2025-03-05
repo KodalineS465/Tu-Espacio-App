@@ -4,7 +4,7 @@ import { supabase } from '../../../supabase';
 import ShowMyFinishedAuctions from '../../components/ShowMyFinishedAuctions';
 
 const AuctionFinished = ({ navigation }) => {
-    const [autions, setAuctions] = useState([]);
+    const [auctions, setAuctions] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -49,14 +49,14 @@ const AuctionFinished = ({ navigation }) => {
 
                 if (auctionsError) throw auctionsError;
 
-                if (auctions.length > 0) {
+                if (auctionsData.length > 0) {
                     const latestAuction = auctionsData[0];
 
                     // Filtrar las ofertas del usuario actual
                     const userOffers = latestAuction.offers.filter(offer => offer.id === user.data.user.id);
                     
                     if (userOffers.length > 0) {
-                        constLatestOffer = userOffers.sort((a, b) => b.date - a.date)[0];
+                        const latestOffer = userOffers.sort((a, b) => b.date - a.date)[0];
 
                         auctionsList.push({
                             propertyId: property.id,
@@ -74,6 +74,8 @@ const AuctionFinished = ({ navigation }) => {
 
         } catch (error) {
             console.error('Error obteniendo subastas: ', error);
+        } finally {
+            setLoading(false);
         }
     };
 

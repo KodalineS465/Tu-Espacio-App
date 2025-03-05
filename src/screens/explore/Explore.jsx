@@ -1,136 +1,115 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { View, RefreshControl, ActivityIndicator, FlatList, Text, Image } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, RefreshControl, ActivityIndicator, FlatList } from 'react-native';
 import QuickShow from "../../components/QuickShow";
 import { useFocusEffect } from '@react-navigation/native';
 import UserContext from "../../utils/UserProvider";
 
 import { supabase } from '../../../supabase';
 
+
+// Muestra una lista de propiedades obtenidas desde Supabase con soporte de paginación y actualización.
 const Explore = ({ navigation }) => {
-    const { filter, setFilter, orderBy, setOrderBy } = useContext(UserContext);
+    const { orderBy } = useContext(UserContext);
     const [properties, setProperties] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [lastVisible, setLastVisible] = useState(null);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false);
+    const [offset, setOffset] = useState(0);
 
+    // Maneja el efecto de enfoque en la pantalla para recargar las propiedades
     useFocusEffect(
         React.useCallback(() => {
             // Acciones que deseas ejecutar cuando la pantalla obtiene el enfoque
             console.log('Pantalla enfocada');
-            getProperties()
+            fetchProperties(true);
             // Puedes retornar una función de limpieza opcional si es necesario
             return () => {
                 console.log('Pantalla desenfocada');
-                setProperties([])
-                setRefreshing(false)
-                setLoading(true)
-                setLastVisible(null)
-                setLoadingMore(false)
-                setModalVisible(false)
+                resetState();
             };
         }, [orderBy])
     );
 
-    const onRefresh = async () => {
-        console.log('Pantalla desenfocada');
-        setProperties([])
-        setRefreshing(false)
-        setLoading(true)
-        setLastVisible(null)
-        setLoadingMore(false)
-        setModalVisible(false)
-        // Acciones que deseas ejecutar cuando la pantalla obtiene el enfoque
-        console.log('Pantalla enfocada');
-        getProperties()
-        // Puedes retornar una función de limpieza opcional si es necesario
+    // Función para resetear el estado del componente.
+    const resetState = () => {
+        setProperties([]);
+        setRefreshing(false);
+        setLoading(true);
+        setLoadingMore(false);
+        setOffset(0);
     };
 
-    const getProperties = async (isReloading = false) => {
+    // Función para manejar la actualización de la lista al realizar pull-to-refresh.
+    const onRefresh = async () => {
+        resetState();
+        fetchProperties(true);
+    };
+
+    // Obtiene las propiedades desde Supabase con soporte de paginación. @param {boolean} reset - Indica si se debe reiniciar la lista.
+    const fetchProperties = async (reset = false) => {
+        if (loading || loadingMore) return;
+
         try {
+            if (reset) {
+                setLoading(true);
+                setOffset(0);
+            } else {
+                setLoadingMore(true);
+            }
+
             let { data: propertiesList, error } = await supabase
                 .from('Properties')
                 .select(`*, Auctions:Auctions(id, createdAt)`) // Subconsulta para traer Auctions
                 .gte('expiresAt', new Date().toISOString())
                 .order('expiresAt', { ascending: false })
-                .limit(10);
+                .range(reset ? 0 : offset, reset ? 9 : offset + 9); // Paginación
     
             if (error) throw error;
     
             if (propertiesList.length > 0) {
-                await getImagesUrls(propertiesList, isReloading);
+                await getImagesUrls(propertiesList);
+                setProperties(prev => [...prev, ...propertiesList]);
             } else {
                 setLoading(false);
             }
         } catch (error) {
             console.error('Error fetching properties:', error.message);
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
         }
     };
 
-                /*if (!auctionsSnapshot.empty) {
-                    const auctionDoc = auctionsSnapshot.docs[0];
-                    propertyData.auction = {
-                        id: auctionDoc.id,
-                        ...auctionDoc.data()
-                    };
-                }
-                propertiesList.push(propertyData);
-            }
-
-            if (propertiesList.length > 0) {
-                setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-
-                await getImagesUrls(propertiesList, isReloading && true);
-            } else {
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error('Error fetching properties:', error);
-        }
-    };*/
-
-    const getImagesUrls = async (propertiesList, isReloading = false) => {
-        for (const item of propertiesList) {
-            try {
-                const { data, error } = await supabase
-                    .storage
-                    .from('images')
-                    .list(item.id);
-
+    // Obtiene las imágenes de las propiedades desde Supabase Storage.
+    const getImagesUrls = async (propertiesList) => {
+        try {
+            const imagesData = await Promise.all(propertiesList.map(async (item) => {
+                const { data, error } = await supabase.storage.from('images').list(`${item.id}/`);
                 if (error) throw error;
 
-                item.propertyImages = data.map(file =>
-                    `${supabase.storage.from('images').getPublicUrl(`${item.id}/${file.name}`).publicURL}`
-                );
-            } catch (error) {
-                console.error('Error getting images:', error.message);
-            }
-        }
+                return {
+                    ...item,
+                    propertyImages: data.map(file =>
+                        supabase.storage.from('images').getPublicUrl(`${item.id}/${file.name}`).publicURL
+                    )
+                };
+            }));
 
-        if (isReloading) {
-            setProperties(propertiesList);
-        } else {
-            setProperties(prevProperties => [...prevProperties, ...propertiesList]);
+            setProperties(prev => [...prev, ...imagesData]);
+        } catch (error) {
+            console.error('Error getting images:', error.message);
         }
-        setLoading(false);
     };
-    
+
+    // Renderiza cada elemento de la lista.
     const renderItem = ({ item }) => {
         // Obtener la marca de tiempo actual
         const currentTime = new Date().getTime();
-        console.log("variable iff", item.expiresAt < currentTime)
-
         // Verificar si el timestamp del item es mayor que el tiempo actual
-        if (item.expiresAt < currentTime) {
-            return (
-                <QuickShow property={item} onPress={() => { navigation.push("ExplorePropertyDetail", { property: item }) }} />
-            );
-        } else {
-            console.log("variable if", item.expiresAt < currentTime)
-            // Si el timestamp ha pasado, no mostrar el elemento
-            return <View />;
-        }
+        if (new Date(item.expiresAt).getTime() >= Date.now()) {
+            return <QuickShow property={item} onPress={() => navigation.push("ExplorePropertyDetail", { property: item }) } />;
+        } 
+        return null;
     };
 
 
@@ -144,13 +123,9 @@ const Explore = ({ navigation }) => {
                         style={{ flex: 1, backgroundColor: '#0f1035' }}
                         data={properties}
                         keyExtractor={(item) => item.id.toString()}
-                        renderItem={(item) => renderItem(item)}
+                        renderItem={renderItem}
                         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                        onEndReached={async ()=>{
-                            setLoadingMore(true)
-                            await getProperties();
-                            setLoadingMore(false)
-                        }}
+                        onEndReached={() => { if (!loadingMore) fetchProperties(false); }}
                         onEndReachedThreshold={0.1}
                         scrollEventThrottle={16}
                         scrollEnabled={!loadingMore && !refreshing}

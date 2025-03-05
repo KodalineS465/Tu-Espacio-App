@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useState } from 'react';
 import {View, Image, StyleSheet, Text, ScrollView, TouchableOpacity, Modal} from 'react-native';
 import BlueButton from "./BlueButton";
 import Carrousel from "./Carrousel";
@@ -8,8 +8,8 @@ const FullShow = ({property,user, onPress, remainingTime}) => {
     const firstName = user.name.split(' ')[0];
 
     function formatPrice(price) {
+        if (!price) return "0";
         const parts = price.toString().split('.');
-
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
         return parts.join('.');
@@ -58,8 +58,8 @@ const FullShow = ({property,user, onPress, remainingTime}) => {
                         <View style={styles.contentContainerProfile}>
                             <View style={styles.imageContainer}>
                                 <Image
-                                    source={{uri: user.photoURL}}
-                                    style={styles.image}
+                                    source={user.photoURL ? { uri: user.photoURL } : require('../assets/not-image.png')} 
+                                    style={styles.image} 
                                 />
                             </View>
                             <View style={styles.textContainerProfile}>
@@ -121,7 +121,14 @@ const FullShow = ({property,user, onPress, remainingTime}) => {
                         <Image source={require('../assets/available.png')}
                                style={styles.logo}
                         />
-                        <Text style={styles.textBold}>Disponible a partir {property.availability.isAvailableNow ? "de ahora!" : "del " + property.availability.date.dateString}</Text>
+                        <Text style={styles.textBold}>
+                            Disponible a partir {property.availability.isAvailableNow 
+                                ? "de ahora!" 
+                                : property.availability.date?.dateString 
+                                    ? `del ${property.availability.date.dateString}` 
+                                    : "Próximamente"
+                            }
+                        </Text>
                     </View>
                     <View style={styles.mainLineContainer}>
                         <View style={styles.lineContainer}>
@@ -136,7 +143,7 @@ const FullShow = ({property,user, onPress, remainingTime}) => {
                     </View>
                     <View style={styles.down}>
                         {property.services.map((service, index) => (
-                            <View style={styles.buttonContainer} key={index + service}>
+                            <View style={styles.buttonContainer} key={`${service}-${index}`}>
                                 <View style={styles.servicesContainer}>
                                     <Text style={styles.textShow}>
                                         {service}
@@ -158,7 +165,7 @@ const FullShow = ({property,user, onPress, remainingTime}) => {
                     </View>
                     <View style={styles.down}>
                         {property.amenities.map((amenity, index)=> (
-                            <View style={styles.buttonContainer} key={index + amenity}>
+                            <View style={styles.buttonContainer} key={`${amenity}-${index}`}>
                                 <View style={styles.servicesContainer}>
                                     <Text style={styles.textShow}>{amenity}</Text>
                                 </View>
@@ -174,7 +181,7 @@ const FullShow = ({property,user, onPress, remainingTime}) => {
                     transparent={true}
                     visible={modalVisible}
                     onRequestClose={() => {
-                        setModalVisible(!modalVisible);
+                        if (modalVisible) setModalVisible(false);
                     }}
                 >
                     <View style={styles.centeredView}>

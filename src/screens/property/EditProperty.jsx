@@ -66,23 +66,23 @@ const EditProperty = ({ route }) => {
     useEffect(() => {
         const checkFormValidity = () => {
             setIsFormValid(
-                property?.fullAddress?.trim() &&
-                property?.address?.trim() &&
-                property?.location?.lat !== null &&
-                property?.location?.lng !== null &&
-                property?.price?.trim() &&
-                property?.rooms !== null &&
-                property?.bathrooms !== null &&
-                property?.parkingLots !== null &&
-                property?.availability?.date !== null &&
-                property?.type !== null &&
-                property?.description?.trim() &&
-                property?.surfaceType?.trim() &&
-                property?.surfaceUnit?.trim() &&
-                property?.surfaceQuantity?.trim() &&
-                property?.oldness !== null &&
-                property?.services?.length > 0 &&
-                property?.amenities?.length > 0 &&
+                fullAddress?.trim() &&
+                address?.trim() &&
+                location?.lat !== null &&
+                location?.lng !== null &&
+                price?.trim() &&
+                rooms !== null &&
+                bathrooms !== null &&
+                parkingLots !== null &&
+                availability?.date !== null &&
+                type !== null &&
+                description?.trim() &&
+                surfaceType?.trim() &&
+                surfaceUnit?.trim() &&
+                surfaceQuantity?.trim() &&
+                oldness !== null &&
+                services?.length > 0 &&
+                amenities?.length > 0 &&
                 images.length > 0
             );
         };
@@ -96,23 +96,23 @@ const EditProperty = ({ route }) => {
             let { data, error } = await supabase.from('Properties').select('*').eq('id', propertyId).single();
             if (error) throw error;
 
-            if (propertyData) {
-                setFullAddress(propertyData.fullAddress);
-                setAddress(propertyData.address);
-                setLocation(propertyData.location);
-                setPrice(propertyData.price);
-                setRooms(propertyData.rooms);
-                setBathrooms(propertyData.bathrooms);
-                setParkingLots(propertyData.parkingLots);
-                setAvailability(propertyData.availability);
-                setType(propertyData.type);
-                setDescription(propertyData.description);
-                setSurfaceType(propertyData.surfaceType);
-                setSurfaceUnit(propertyData.surfaceUnit);
-                setSurfaceQuantity(propertyData.surfaceQuantity);
-                setOldness(propertyData.oldness);
-                setServices(propertyData.services);
-                setAmenities(propertyData.amenities);
+            if (data) {
+                setFullAddress(data.fullAddress);
+                setAddress(data.address);
+                setLocation(data.location);
+                setPrice(data.price);
+                setRooms(data.rooms);
+                setBathrooms(data.bathrooms);
+                setParkingLots(data.parkingLots);
+                setAvailability(data.availability);
+                setType(data.type);
+                setDescription(data.description);
+                setSurfaceType(data.surfaceType);
+                setSurfaceUnit(data.surfaceUnit);
+                setSurfaceQuantity(data.surfaceQuantity);
+                setOldness(data.oldness);
+                setServices(data.services);
+                setAmenities(data.amenities);
                 getImages();
             }
         } catch (error) {
@@ -127,9 +127,13 @@ const EditProperty = ({ route }) => {
         try {
             let { data, error } = await supabase.storage.from('property-images').list(`${propertyId}/`);
             if (error) throw error;
-            const urls = data.map(img => ({ uri:  `${SUPABASE_URL}/storage/v1/object/public/property-images/${propertyId}/${img.name}`, name: img.name }));
+            const urls = data.map(img => ({ 
+                uri:  supabase.storage.from('property-images').getPublicUrl(`${propertyId}/${img.name}`).publicUrl,
+                name: img.name
+            }));
+
             setImages(urls);
-            setImageNames(propertyImages.map(image => image.name));
+            setImageNames(urls.map(image => image.name));
         } catch (error) {
             console.error('Error al obtener archivos de imágenes:', error);
         } finally {
@@ -143,7 +147,7 @@ const EditProperty = ({ route }) => {
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
                 aspect: [4, 3],
                 quality: 1,
-                allowsMultipleSelection: true
+                allowsMultipleSelection: Platform.OS === 'android'
             });
             if (!result.canceled) {
                 const newImages = result.assets;
@@ -164,7 +168,10 @@ const EditProperty = ({ route }) => {
             await Promise.all(newImages.map(async (image, index) => {
                 const resizedImage = await manipulateAsync(image.uri, [{ resize:{width:500} }], { compress: 1, format: SaveFormat.PNG });
                 const fileName = `${Date.now()}_${index + 1}.png`;
-                let { error } = await supabase.storage.from('property-images').upload(`${propertyId}/${fileName}`, resizedImage.uri, { contentType: 'image/png'});
+                const response = await fetch(resizedImage.uri);
+                const blob = await response.blob();
+                
+                let { error } = await supabase.storage.from('property-images').upload(`${propertyId}/${fileName}`, blob, { contentType: 'image/png' });
                 if (error) throw error;
             }));
         } catch (error) {
@@ -187,9 +194,9 @@ const EditProperty = ({ route }) => {
                     onPress: async () => {
                         setUpLoading(true);
                         try {
-                            let { error } = await supabase.storage.from('property-images').remove([`${propertyId}/${imageName}`]);
+                            let { error } = await supabase.storage.from('property-images').remove([`${propertyId}/${images[index].name}`]);
                             if (error) throw error;
-                            setImages(images.filter(img => img.name !== imageName));
+                            setImages(images.filter(img => img.name !== images[index].name));
                         } catch (error) {
                             console.error('Error al eliminar la imagen:', error);
                         }
@@ -223,7 +230,7 @@ const EditProperty = ({ route }) => {
                 amenities: amenities,
             }
 
-            let { error } = await supabase.from('Properties').update(property).eq('id', propertyId);
+            let { error } = await supabase.from('Properties').update(propertyData).eq('id', propertyId);
             if (error) throw error;
             Alert.alert('Éxito', 'La información de la casa se ha actualizado correctamente.');
         } catch (error) {

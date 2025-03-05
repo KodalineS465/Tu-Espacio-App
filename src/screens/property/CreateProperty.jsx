@@ -85,10 +85,15 @@ const CreateProperty = ({ navigation }) => {
                     setFinal_interval(result.intervalo_confianza_hasta);
     
                 } else {
-                    setAverage('');
+                    setAverage(null);
+                    setInitial_interval(null);
+                    setFinal_interval(null);
                 }
             } catch (error) {
                 console.error(error);
+                setAverage(null);
+                setInitial_interval(null);
+                setFinal_interval(null);
             }
         };
 
@@ -104,7 +109,7 @@ const CreateProperty = ({ navigation }) => {
                 rooms !== null &&
                 bathrooms !== null &&
                 parkingLots !== null &&
-                availability.date !== null || availability.isAvailableNow === true &&
+                availability.date !== null || availability.isAvailableNow &&
                 type !== null &&
                 description !== '' &&
                 surfaceType !== '' &&
@@ -121,8 +126,11 @@ const CreateProperty = ({ navigation }) => {
         surfaceType, surfaceUnit, surfaceQuantity, oldness, services, amenities, images]);
 
     useEffect(() => {
-        GooglePlacesAutocompleteInput.current?.setAddressText('');
+        if (GooglePlacesAutocompleteInput.current && fullAddress === '') {
+            GooglePlacesAutocompleteInput.current.setAddressText('');
+        }
     }, [fullAddress]);
+
     const pickImages = async () => {
         try {
             let result = await ImagePicker.launchImageLibraryAsync({
@@ -191,10 +199,15 @@ const CreateProperty = ({ navigation }) => {
                     [{ resize: { width:500 } }],
                     { compress: 1, format: SaveFormat.PNG }
                 );
+
+                const response = await fetch(resizedImage.uri);
+                const blob = await response.blob(); 
+
                 const imageName = `${propertyId}_${index + 1}.png`;
-                const { data, error } = await supabase.storage
+                const { error } = await supabase.storage
                     .from('property-images')
-                    .upload(imageName, resizedImage.uri, { contentType: 'image/png' });
+                    .upload(imageName, blob, { contentType: 'image/png' });
+                
                 if (error) throw error;
             });
 

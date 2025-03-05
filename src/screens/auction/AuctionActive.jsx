@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { supabase } from '../../../supabase'; // Archivo de configuración de Supabase
 import style from "../../components/Styles";
@@ -20,7 +20,7 @@ const AuctionActive = ({ navigation }) => {
                 console.log('Pantalla desenfocada');
                 setAuctions([])
                 setRefreshing(false)
-                setLoading(true)
+                setLoading(false)
             };
         }, [])
     );
@@ -35,20 +35,30 @@ const AuctionActive = ({ navigation }) => {
     const getAllAuctions = async () => {
         try {
             const currentTime = new Date().toISOString();
+            const { data: user } = await supabase.auth.getUser();
+
+            const userId = user?.id;
+
+            if (!userId) return;
+            
             const { data: propertiesList, error } = await supabase
                 .from('Properties')
                 .select(`*, Auctions:Auctions(id, createdAt, isDead, offers)`)
                 .gte('expiresAt', currentTime);
 
             if (error) throw error;
+            if (!propertiesList || propertiesList.length === 0) {
+                setLoading(false);
+                return;
+            }
 
             const filteredAuctions = propertiesList.flatMap(property => {
                 const latestAuction = property.Auctions
                     .filter(auction => !auction.isDead)
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a. createdAt))[0];
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
                 if (latestAuction) {
-                    const userOffers = latestAuction.offers.filter(offer => offer.id === supabase.auth.user()?.id);
+                    const userOffers = latestAuction.offers.filter(offer => offer.id === userId);
                     if (userOffers.length > 0) {
                         const latestOffer = userOffers.sort ((a, b) => new Date(b.date) - new Date(a.date))[0];
                         return [{
@@ -66,6 +76,7 @@ const AuctionActive = ({ navigation }) => {
             setLoading(false);
         } catch (error) {
             console.error('Error obteniendo subastas: ', error);
+            setLoading(false);
         }
     };
 
@@ -79,8 +90,9 @@ const AuctionActive = ({ navigation }) => {
                     .list(item.propertyId);
 
                 if (error) throw error;
+
                 item.property.propertyImage = data.length > 0
-                    ? supabase.storage.from('images').getPublicUrl(`${item.propertyId}/${data[0].name}`).publicURL
+                    ? supabase.storage.from('images').getPublicUrl(`${item.propertyId}/${data[0].name}`).publicUrl
                     : '';
             } catch (error) {
                 console.error('Error al cargar la URL de la primera imagen:', error);

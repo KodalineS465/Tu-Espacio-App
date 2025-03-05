@@ -115,6 +115,7 @@ export default function Registry({ navigation }) {
     
                 if (error){
                     console.error("🚨 Error en Supabase Auth:", error.message);
+                    Alert.alert("DebugError", "Esto confirma que NO FUNCIONA");
                     throw error;
                 }
 

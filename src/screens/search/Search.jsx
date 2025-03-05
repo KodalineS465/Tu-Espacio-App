@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ActivityIndicator, View, TextInput, FlatList, Text, TouchableOpacity } from "react-native";
 import { WebView } from "react-native-webview";
 import axios from "axios";
@@ -15,13 +15,16 @@ const Search = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
+    const webViewRef = useRef(null);
+    const isMounted = useRef(true); // Para evitar actualizar estado si el componente ya se desmontó
 
     useFocusEffect(
         React.useCallback(() => {
-            getProperties()
+            isMounted.current = true;
+            getProperties();
+
             return () => {
-                setHouses([])
-                setLoading(true)
+                isMounted.current = false;
             };
         }, [])
     );
@@ -30,18 +33,18 @@ const Search = ({ navigation }) => {
         try {
             const { data: properties, error } = await supabase
                 .from('Properties')
-                .select("*, Auctions(*), location:location(lat, lng)")
+                .select("*, Auctions(*)")
                 .gte("expiresAt", new Date().toISOString())
                 .order("expiresAt", { ascending: false })
-                .order("createdAt", { ascending: false });
 
             if (error) throw error;
 
-            setHouses(properties || []);
-            setLoading(false);
+            if (isMounted.current) {
+                setHouses(Array.isArray(properties) ? properties : []);
+                setLoading(false);
+            }
         } catch (error) {
             console.error('Error fetching properties: ', error);
-            setLoading(false);
         }
     };
 
@@ -69,13 +72,13 @@ const Search = ({ navigation }) => {
         sendMessageToWebView(position);
     };
 
-    const webViewRef = useRef(null);
-
     const sendMessageToWebView = (position) => {
-        webViewRef.current?.injectJavaScript(`
-            map.setView([${position.latitude}, ${position.longitude}], 15);
-            L.marker([${position.latitude}, ${position.longitude}]).addTo(map);
-        `);
+        if (webViewRef.current) {
+            webViewRef.current.injectJavaScript(`
+                map.setView([${position.latitude}, ${position.longitude}], 15);
+                L.marker([${position.latitude}, ${position.longitude}]).addTo(map);
+            `);
+        }
     };
 
     const mapHtml = `
@@ -133,6 +136,12 @@ const Search = ({ navigation }) => {
                     source={{ html: mapHtml }}
                     style={{ flex: 1 }}
                 />
+            )}
+
+            {houses.length === 0 && !loading && (
+                <View style={{ position: "absolute", top: "50%", left: "50%", transform: [{ translateX: -50 }, { translateY: -50 }] }}>
+                    <Text>No hay propiedades disponibles</Text>
+                </View>
             )}
         </View>
     );

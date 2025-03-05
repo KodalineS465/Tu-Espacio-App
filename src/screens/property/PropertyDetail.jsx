@@ -1,6 +1,6 @@
 import { ActivityIndicator, Modal, Text, TouchableOpacity, View } from "react-native";
 import FullShow from "../../components/FullShow";
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from '../../../supabase';
 import Bid from "../../components/Bid";
 import style from "../../components/Styles";
@@ -13,42 +13,56 @@ const PropertyDetail = ({ route, navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [currentBid, setCurrentBid] = useState(100300);
     const [tiempoRestante, setTiempoRestante] = useState('');
+    const [propertyImages, setPropertyImages] = useState([]);
 
     useEffect(() => {
+        if (!property?.expiresAt) return;
+
         const timestampInicial = new Date(property.expiresAt).getTime();
 
-        const intervalo = setInterval(() => {
+        const actualizarTiempo = () => {
             const tiempoActual = new Date().getTime();
             const diferenciaEnMilisegundos = timestampInicial - tiempoActual;
+
+            if (diferenciaEnMilisegundos <= 0) {
+                setTiempoRestante("Expirado");
+                clearInterval(intervalo);
+                return;
+            }
 
             const segundosTotales = Math.floor(diferenciaEnMilisegundos / 1000);
             const dias = Math.floor(segundosTotales / (24 * 60 * 60));
             const horas = Math.floor((segundosTotales % (24 * 60 * 60)) / (60 * 60));
             const minutos = Math.floor((segundosTotales % (60 * 60)) / 60);
 
-            const tiempoFormateado = `${dias}d ${horas}h ${minutos}m`;
+            setTiempoRestante(`${dias}d ${horas}h ${minutos}m`);
+        };
 
-            setTiempoRestante(tiempoFormateado);
-        }, 1000);
-
+        actualizarTiempo();
+        const intervalo = setInterval(actualizarTiempo, 1000);
+        
         return () => clearInterval(intervalo);
-    }, [property.expiresAt]);
+    }, [property?.expiresAt]);
 
     useEffect(() => {
-        getImagesUrls()
-    }, []);
+        if (property?.id){
+            getImagesUrls()
+        }
+    }, [property]);
 
     const getImagesUrls = async () => {
+        if (!property?.id) return;
+
         try {
             const { data, error } = await supabase.storage.from('images').list(property.id);
-
             if (error) throw error;
 
-            property.images = data.map(image => {
-                return supabase.storage.from('images').getPublicUrl(`${property.id}/${image.name}`).publicUrl;
-            });
+            const images = data.map(image =>
+                supabase.storage.from('images').getPublicUrl(`${property.id}/${image.name}`).publicUrl
+            );
 
-            await getUser()
+            setPropertyImages(images);
+            await getUser();
         } catch (error) {
             console.error('Error getting download URLs:', error);
         }
@@ -56,6 +70,8 @@ const PropertyDetail = ({ route, navigation }) => {
 
 
     const getUser = async () => {
+        if (!property?.user) return;
+
         try {
             setLoading(true);
             const { data: userData, error } = await supabase.from('Users').select('*').eq('id', property.user).single();
@@ -80,11 +96,21 @@ const PropertyDetail = ({ route, navigation }) => {
                 date: new Date().toISOString()
             };
 
-            const { error } = await supabase.from("Auctions").update({
-                price: currentBid,
-                offers: [...property.offers, offerData]
-            }).eq('id', auctionId);
+            const { data: auction, error: fetchError } = await supabase
+                .from("Auctions")
+                .select("offers")
+                .eq("id", auctionId)
+                .single();
 
+            if (fetchError) throw fetchError;
+
+            const newOffers = auction?.offers ? [...auction.offers, offerData] : [offerData];
+
+            const { error } = await supabase
+                .from("Auctions")
+                .update({ price: currentBid, offers: newOffers})
+                .eq('id', auctionId);
+                
             if(error) throw error;
 
             navigation.navigate("Explore");
@@ -120,7 +146,7 @@ const PropertyDetail = ({ route, navigation }) => {
                         </TouchableOpacity>
                     </Modal>
                     <FullShow
-                        property={property}
+                        property={{ ...property, images: propertyImages }}
                         user={user}
                         onPress={() => setModalVisible(true)}
                         remainingTime={tiempoRestante}

@@ -43,7 +43,6 @@ const AuctionLessorFinished = ({ navigation }) => {
                 .eq('user', user.user.id)
                 .lte('expiresAt', new Date().toISOString())
                 .order('expiresAt', { ascending: false })
-                .order('createdAt', { ascending: false });
 
             if (propertiesError) throw propertiesError;
 
@@ -56,7 +55,6 @@ const AuctionLessorFinished = ({ navigation }) => {
                     .eq('property_id', property.id)
                     .eq('isDead', false)
                     .order('createdAt', { ascending: false })
-                    limit(1)
                     .single();
 
                 if (!auctionError) {
@@ -64,32 +62,30 @@ const AuctionLessorFinished = ({ navigation }) => {
 
                     // Agregar información de usuario a las ofertas
                     if (latestAuction?.offers?.length > 0) {
-                            for (let offer of latestAuction.offers){
+                        await Promise.all(latestAuction.offers.map(async (offer) => {
                             const { data: userData, error: userError } = await supabase
                                 .from('Users')
                                 .select('*')
                                 .eq('id', offer.id)
                                 .single();
-                            if (!userError) {
-                                offer.user = userData;
-                            }
-                        }
+                            if (!userError) offer.user = userData;
+                        }));
                     }
                 }
             }
 
             await getImagesUrls(propertiesList);
-            setLoading(false);
         } catch (error) {
             console.error('Error al cargar las propiedades: ', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const getImagesUrls = async (propertiesList) => {
-        for (const item of propertiesList) {
-            try {
-                const { data, error } = await supabase
-                    .storage
+        try {
+            const imagePromises = propertiesList.map(async (item) => {
+                const { data, error } = await supabase.storage
                     .from('images')
                     .list(item.id);
 
@@ -97,21 +93,23 @@ const AuctionLessorFinished = ({ navigation }) => {
 
                 if (data.length > 0) {
                     const imagePath = data[0].name;
-                    const { data: url } = supabase
-                        .storage
+                    const { data: url } = supabase.storage
                         .from('images')
                         .getPublicUrl(`${item.id}/${imagePath}`);
-
+                    
                     item.propertyImage = url.publicUrl;
-                } else {
-                    item.propertyImage = '';
-                }
-            } catch (error) {
-                console.error('Error al cargar la URL de la imagen: ', error);
+            } else {
+                item.propertyImage = '';
             }
-        }
-        setProperties(propertiesList);
-    };
+            return item;
+        });
+
+        const updatedProperties = await Promise.all(imagePromises);
+        setProperties(updatedProperties);
+    }   catch (error) {
+        console.error('Error al cargar las imágenes: ', error);
+    }
+};
 
     return (
         <>
