@@ -36,8 +36,8 @@
       "src/assets/*"
     ],
     "extra": {
-      "SUPABASE_URL": "https://vysrppzcjjyxazjlqpxj.supabase.co",
-      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5c3JwcHpjamp5eGF6amxxcHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYzNjc2MTEsImV4cCI6MjA1MTk0MzYxMX0.i_LEyqpHCuV2Fazl1hRLHWcs_x8xgdsHZD1k7H3xqSc"
+      "SUPABASE_URL": "https://gtjrbxdpzpaodrbdfsqe.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0anJieGRwenBhb2RyYmRmc3FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExMTUyNjYsImV4cCI6MjA1NjY5MTI2Nn0.5JPRwFQzm4OQLOO8KtZcm3onFIba6ORal2lxettvoYc"
     }
   }
 }

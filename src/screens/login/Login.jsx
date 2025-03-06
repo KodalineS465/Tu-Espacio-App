@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, error } from "react";
 import { Image, KeyboardAvoidingView, ScrollView, Text, View, Linking, Alert } from 'react-native';
 import { supabase } from '../../../supabase'; // Importación del cliente de Supabase para autenticación
 import OrLine from "../../components/OrLine";
@@ -50,18 +50,19 @@ export default function Login({ navigation }) {
             Alert.alert("Error", "Por favor, ingresa tu correo y contraseña.");
             return;
         }
-    
-        // Intentar iniciar sesión con Supabase
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    
-        if (error) {
-            console.error('Error al iniciar sesión: ', error.message);
-            Alert.alert("Error", error.message);
-        } else {
-            console.log('Usuario inició sesión correctamente.', data);
-            // Aquí puedes redirigir a la siguiente pantalla si es necesario
-            navigation.replace("Profile");
+
+        try {
+            //Alert.alert("Debugtry", "Esto confirma que la función se ejecuta");
+            await supabase
+                .from('Users')
+                .select('*') // Seleccionar toda la información del usuario
+
+            console.log(data.email)
+        } catch (error) {
         }
+
+        // Intentar iniciar sesión con Supabase
+        //const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     }
 
     /**
@@ -97,7 +98,7 @@ export default function Login({ navigation }) {
             <ScrollView showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
                 {/* Sección del logo */}
                 <View style={style.logoContainer}>
-                    <Image source={require('../../assets/logo.png')} style={style.logo}/>
+                    <Image source={require('../../assets/logo.png')} style={style.logo} />
                 </View>
 
                 {/* Mensaje de bienvenida */}
@@ -106,32 +107,32 @@ export default function Login({ navigation }) {
                 </View>
 
                 {/* Botón para iniciar sesión con Google */}
-                <GoogleButton 
+                <GoogleButton
                     title="Iniciar con Google"
-                    onPress={() => 
+                    onPress={() =>
                         onGoogleButtonPress()
-                        .then(() => console.log('Signed in with Google!'))
-                        .catch(error => alert(error.message))
+                            .then(() => console.log('Signed in with Google!'))
+                            .catch(error => alert(error.message))
                     }
                 />
 
                 <OrLine /> {/* Línea divisoria entre opciones de inicio de sesión */}
-                
+
                 {/* Formulario para inicio de sesión con correo y contraseña */}
                 <View style={style.mainContainer}>
                     <View style={style.inputContainer}>
                         <Text style={style.textSubtitle}>Iniciar con correo electronico:</Text>
                         <Input placeholder="email" value={email} onChangeText={text => setEmail(text)} />
-                        <HiddenInput placeholder="contraseña" value={password} onChangeText={text => setPassword(text)}/>
+                        <HiddenInput placeholder="contraseña" value={password} onChangeText={text => setPassword(text)} />
                     </View>
                 </View>
 
                 {/* Botón para iniciar sesión con email */}
                 <BlueButton text="Ingresar" onPress={HandleEmailLogin} />
-                
+
                 {/* Opciones adicionales */}
                 <View style={style.mainContainer}>
-                    <BlueText text="¿Olvidaste tu contraseña?" onPress={() => {navigation.push("PasswordReset")}} />
+                    <BlueText text="¿Olvidaste tu contraseña?" onPress={() => { navigation.push("PasswordReset") }} />
                     <BlueText text="Consultar terminos y condiciones" onPress={handleButtonPress} />
                 </View>
 
@@ -142,7 +143,7 @@ export default function Login({ navigation }) {
                     <View style={style.allInOneContainer}>
                         <Text>
                             <Text style={style.textSubtitle}>No tengo cuenta.</Text>
-                            <Text style={style.textBlue} onPress={() => {navigation.push("Registry")}}> Registrarme.</Text>
+                            <Text style={style.textBlue} onPress={() => { navigation.push("Registry") }}> Registrarme.</Text>
                         </Text>
                     </View>
                 </View>
