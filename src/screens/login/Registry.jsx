@@ -102,89 +102,59 @@ export default function Registry({ navigation }) {
     // Función para manejar el registro de usuario en Supabase.
     const handleContinue = async () => {
         if (formIsValid) {
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout en la solicitud")), 5000)
+            );
+            
             try {
-                //Alert.alert("Debugtry", "Esto confirma que la función se ejecuta");
-                const { data, error } = await supabase.from('Users').insert([
-                    {
-                        //id: user?.id,
-                        //name: name + " " + lastname,
-                        //email: user?.email,
-                        //photoURL: '',
-                        //emailVerified: !!user?.email_confirmed_at,
-                        //accountVerified: false,
-                        //provider: 'email'
-                        id: '1',
-                        name: name + " " + lastname,
-                        email: 'prueba@correo.com',
-                        photoURL: '',
-                        emailVerified: !!false,
-                        accountVerified: false,
-                        provider: 'email'
-                    }
-                ]);
-                
-                console.log("Correcto");
-    
-                //console.log('Usuario creado y datos guardados en Supabase.');
-            } catch (error) {
-                //console.error('Error al subir usuario a Supabase:', error);
-            }
-            {/*try {
-                Alert.alert("DebugAlert", "Esto confirma que la función se ejecuta");
-                console.log("📡 Intentando registra");
-                console.log(data.user);
-                
+                console.log('Registrando usuario...');
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
-                    password: password
+                    password: password,
                 });
-    
-                if (error){
-                    console.error("🚨 Error en Supabase Auth:", error.message);
-                    throw error;
+                
+                if (error) {
+                    Alert.alert("Error", error.message);
+                    console.error('Error al registrar el usuario:', error.message);
+                    return;
                 }
-
-                console.log("✅ Usuario creado en Auth:", data.user);
-                console.log(data.user);
-                await uploadUser(data.user);
-                Alert.alert('Formulario válido, puedes continuar');
+                
+                console.log('Usuario creado:', data.user);
+                Alert.alert("Éxito", "Usuario registrado correctamente.");
+                uploadUser(data.user);
             } catch (error) {
-                let errorMessage = 'Hubo un problema al crear la cuenta. Por favor, inténtalo de nuevo más tarde.';
-                if (error.message.includes('User already registered')) {
-                    errorMessage = 'El correo electrónico ya está en uso. Por favor, utiliza otro correo electrónico.';
-                }
-                Alert.alert('Error', errorMessage);
+                console.error('Error en el registro:', error);
+                Alert.alert("Error", error.message || "Ocurrió un error al registrar el usuario.");
             }
-        } else {
-            Alert.alert('Información no válida');
-        }*/}
         };
     }
 
-    async function uploadUser(user) {
-        Alert.alert("DebugUploadUser", "Esto confirma que la función se ejecuta");
-        console.log(error.message);
+    const uploadUser = async (user) => {
         try {
-            Alert.alert("Debugtry", "Esto confirma que la función se ejecuta");
+            // Inserta los datos del usuario en la tabla 'Users'
             const { error } = await supabase.from('Users').insert([
                 {
-                    id: user?.id,
-                    name: name + " " + lastname,
-                    email: user?.email,
-                    photoURL: '',
-                    emailVerified: !!user?.email_confirmed_at,
-                    accountVerified: false,
-                    provider: 'email'
-                }
+                    id: user?.id, // ID del usuario
+                    name: `${name} ${lastname}`, // Nombre completo
+                    email: user?.email, // Correo electrónico
+                    photoURL: '', // Foto de perfil (vacío por defecto)
+                    emailVerified: !!user?.email_confirmed_at, // Verificación de correo
+                    accountVerified: false, // Verificación de cuenta (por defecto en falso)
+                    provider: 'email', // Proveedor de autenticación
+                },
             ]);
-
-            if (error) throw error;
-
+    
+            if (error) {
+                throw error; // Lanza el error si ocurre
+            }
+    
             console.log('Usuario creado y datos guardados en Supabase.');
+            Alert.alert('Éxito', 'Usuario registrado y datos guardados correctamente.');
         } catch (error) {
-            console.error('Error al subir usuario a Supabase:', error);
+            console.error('Error al subir usuario a Supabase:', error.message);
+            Alert.alert('Error', 'No se pudo guardar la información del usuario.');
         }
-    }
+    };
 
     return (
         <KeyboardAvoidingView style={styles.fullContainer} behavior="padding">

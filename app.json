@@ -27,13 +27,12 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "assetBundlePatterns": [
-      "src/assets/*"
+      "**/*"
     ],
     "extra": {
       "SUPABASE_URL": "https://gtjrbxdpzpaodrbdfsqe.supabase.co",

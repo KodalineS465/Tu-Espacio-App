@@ -421,75 +421,84 @@ function HomeTabs() {
 const RootStack = createNativeStackNavigator();
 
 function RootNavigator() {
-    const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-
+    const [user, setUser] = useState(null); // Estado para almacenar el usuario autenticado
+    const [isLoading, setIsLoading] = useState(true); // Estado para manejar la carga
 
     useEffect(() => {
         const checkUser = async () => {
             try {
-                // Verifica si supabase está inicializado
+                // Verifica si Supabase está inicializado
                 if (!supabase) {
                     throw new Error('Supabase no está inicializado correctamente');
                 }
 
+                // Obtiene el usuario actual
                 const { data, error } = await supabase.auth.getUser();
                 if (error) throw error;
-                setUser (data.user);
+
+                setUser(data.user); // Establece el usuario si existe
             } catch (error) {
-                console.error('Error obteniendo usuario1: ', error.message);
+                console.error('Error obteniendo usuario: ', error.message);
             } finally {
-                setIsLoading(false);
+                setIsLoading(false); // Finaliza el estado de carga
             }
         };
 
-        checkUser(); // Llamar la verificación del usuario antes de suscribirse a cambios de autenticación
+        checkUser(); // Llama a la verificación del usuario al cargar el componente
 
-        const authListener = supabase.auth.onAuthStateChange((event, session) => {
-            setUser(session?.user || null);
+        // Escucha cambios en el estado de autenticación
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            setUser(session?.user || null); // Actualiza el estado del usuario
         });
 
+        // Limpia el listener al desmontar el componente
         return () => {
-            authListener?.subscription?.unsubscribe(); // Asegura la limpieza del listener
+            authListener?.subscription?.unsubscribe();
         };
     }, []);
 
+    // Muestra un indicador de carga mientras se verifica la sesión
     if (isLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size='large' />
+                <ActivityIndicator size="large" />
             </View>
         );
     }
 
+    // Renderiza la navegación dependiendo del estado del usuario
     return (
         <NavigationContainer>
             <RootStack.Navigator>
                 {user ? (
                     <>
+                        {/* Si el usuario está autenticado, redirige a Home */}
                         <RootStack.Screen
-                            name='Home'
+                            name="Home"
                             component={HomeTabs}
                             options={{
-                                headerShown: false
+                                headerShown: false,
                             }}
                         />
                         <RootStack.Screen
-                            name='Filter'
+                            name="Filter"
                             component={Filter}
                         />
                     </>
                 ) : (
-                    <RootStack.Screen
-                        name='LoginStack'
-                        component={LoginStackScreen}
-                        options={{
-                            headerShown: false
-                        }}
-                    />
+                    <>
+                        {/* Si no hay usuario, redirige a LoginStack */}
+                        <RootStack.Screen
+                            name="LoginStack"
+                            component={LoginStackScreen}
+                            options={{
+                                headerShown: false,
+                            }}
+                        />
+                    </>
                 )}
                 <RootStack.Screen
-                    name='PrivacyPolicy'
+                    name="PrivacyPolicy"
                     component={PrivacyPolicy}
                 />
             </RootStack.Navigator>
